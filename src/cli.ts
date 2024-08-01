@@ -1,4 +1,4 @@
-import { Migration } from "./index";
+import { Migration } from "./migrate.ts";
 
 const args = process.argv.slice(2);
 
@@ -18,3 +18,5 @@ if (dirIndex !== -1) {
 
 const migration = new Migration(configPath, migrationsDir);
 migration.apply();
+
+// todo : cli add generators

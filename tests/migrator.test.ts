@@ -2,7 +2,7 @@ import { expect, test, beforeEach, afterEach } from "bun:test";
 import { readFileSync, writeFileSync, unlinkSync, copyFileSync } from "fs";
 import * as path from "path";
 import * as yaml from "js-yaml";
-import { type Config, Migration } from "./index.ts";
+import { type Config, Migration } from "../src/migrate.ts";
 
 // Test suite
 const testConfigPath = "./test-config.yml";

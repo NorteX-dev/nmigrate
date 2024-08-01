@@ -1,7 +1,7 @@
-import * as fs from "fs";
-import * as path from "path";
-import * as yaml from "js-yaml";
 import chalk from "chalk";
+import fs from "fs";
+import * as yaml from "js-yaml";
+import path from "path";
 
 interface MigrationFile {
 	config: string;
@@ -16,9 +16,10 @@ export interface Config {
 }
 
 export class Migration {
+	private readonly configPath: string;
+	private readonly migrationsDir: string;
+
 	private config: Config;
-	private configPath: string;
-	private migrationsDir: string;
 	private currentVersion: number;
 
 	constructor(configPath: string, migrationsDir: string) {
@@ -48,18 +49,10 @@ export class Migration {
 			if ("version" in this.config) {
 				this.currentVersion = this.config.version;
 			} else {
-				console.log(
-					chalk.yellow.bold(
-						"WARNING: No version field found in config. Assuming version 0.",
-					),
-				);
+				console.log(chalk.yellow.bold("WARNING: No version field found in config. Assuming version 0."));
 			}
 		} else {
-			console.log(
-				chalk.yellow(
-					`No existing config found at ${this.configPath}. Starting with an empty config.`,
-				),
-			);
+			console.log(chalk.yellow(`No existing config found at ${this.configPath}. Starting with an empty config.`));
 		}
 	}
 
@@ -79,11 +72,7 @@ export class Migration {
 			const migration = yaml.load(migrationContent) as MigrationFile;
 
 			if (migration.version > this.currentVersion) {
-				console.log(
-					chalk.green.bold(
-						`Applying migration file: ${file} (version ${migration.version})`,
-					),
-				);
+				console.log(chalk.green.bold(`Applying migration file: ${file} (version ${migration.version})`));
 
 				this.processAddOperations(migration.add);
 				this.processRemoveOperations(migration.remove);
@@ -92,41 +81,39 @@ export class Migration {
 				this.currentVersion = migration.version;
 				this.config.version = this.currentVersion;
 
-				console.log(chalk.green(`  Completed processing ${file}\n`));
+				console.log(chalk.green(`\tCompleted processing ${file}\n`));
 			} else {
-				console.log(
-					chalk.gray(`Skipping migration file: ${file} (version ${migration.version})`),
-				);
+				console.log(chalk.gray(`Skipping migration file: ${file} (version ${migration.version})`));
 			}
 		}
 	}
 
 	private processAddOperations(addOps?: Record<string, any>): void {
 		if (addOps) {
-			console.log(chalk.yellow("  Add operations:"));
+			console.log(chalk.yellow("\tAdd operations:"));
 			for (const [key, value] of Object.entries(addOps)) {
 				this.setNestedProperty(this.config, key, value);
-				console.log(chalk.yellow(`    + ${key}: ${JSON.stringify(value)}`));
+				console.log(chalk.yellow(`\t\t+ ${key}: ${JSON.stringify(value)}`));
 			}
 		}
 	}
 
 	private processRemoveOperations(removeOps?: Record<string, null>): void {
 		if (removeOps) {
-			console.log(chalk.red("  Remove operations:"));
+			console.log(chalk.red("\tRemove operations:"));
 			for (const key of Object.keys(removeOps)) {
 				this.deleteNestedProperty(this.config, key);
-				console.log(chalk.red(`    - ${key}`));
+				console.log(chalk.red(`\t\t- ${key}`));
 			}
 		}
 	}
 
 	private processModifyOperations(modifyOps?: Record<string, any>): void {
 		if (modifyOps) {
-			console.log(chalk.blue("  Modify operations:"));
+			console.log(chalk.blue("\tModify operations:"));
 			for (const [key, value] of Object.entries(modifyOps)) {
 				this.setNestedProperty(this.config, key, value);
-				console.log(chalk.blue(`    * ${key}: ${JSON.stringify(value)}`));
+				console.log(chalk.blue(`\t\t* ${key}: ${JSON.stringify(value)}`));
 			}
 		}
 	}
@@ -134,11 +121,7 @@ export class Migration {
 	private writeConfig(): void {
 		const updatedConfigYaml = yaml.dump(this.config);
 		fs.writeFileSync(this.configPath, updatedConfigYaml, "utf8");
-		console.log(
-			chalk.cyan(
-				`Updated config written to ${this.configPath} (version ${this.currentVersion})`,
-			),
-		);
+		console.log(chalk.cyan(`Updated config written to ${this.configPath} (version ${this.currentVersion})`));
 	}
 
 	private setNestedProperty(obj: any, path: string, value: any): void {
@@ -169,9 +152,3 @@ export class Migration {
 		delete current[keys[keys.length - 1]];
 	}
 }
-
-// Usage
-const configPath = "./config.yml";
-const migrationsDir = "./migrations";
-const migration = new Migration(configPath, migrationsDir);
-migration.apply();
