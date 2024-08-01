@@ -1,0 +1,15 @@
+database:
+  host: localhost
+  port: 5432
+  name: myapp
+logging:
+  level: debug
+  file: /var/log/myapp.log
+features:
+  dark_mode: false
+  notifications: true
+cache:
+  enabled: true
+  type: redis
+  ttl: 3600
+version: 3

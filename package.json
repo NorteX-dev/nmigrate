@@ -1,0 +1,17 @@
+{
+  "name": "nmigrate",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/chalk": "^2.2.0",
+    "@types/js-yaml": "^4.0.9"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "js-yaml": "^4.1.0"
+  }
+}

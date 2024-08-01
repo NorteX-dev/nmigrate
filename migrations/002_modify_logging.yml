@@ -1,0 +1,5 @@
+config: config.yml
+version: 2
+modify:
+  logging.level: debug
+  logging.file: /var/log/myapp.log

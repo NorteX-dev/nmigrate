@@ -1,0 +1,8 @@
+config: config.yml
+version: 3
+remove:
+  features.user_registration:
+add:
+  features:
+    dark_mode: false
+    notifications: true

@@ -1,0 +1,7 @@
+config: config.yml
+version: 1
+add:
+  cache:
+    enabled: true
+    type: redis
+    ttl: 3600
