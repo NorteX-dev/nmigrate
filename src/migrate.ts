@@ -30,14 +30,14 @@ export class Migration {
 	}
 
 	public apply(): void {
-		console.log(chalk.blue.bold("\n=== Starting Migration Process ===\n"));
+		console.log(chalk.blue("\n=== Starting Migration Process ===\n"));
 
 		this.loadConfig();
 		const migrationFiles = this.getMigrationFiles();
 		this.processMigrationFiles(migrationFiles);
 		this.writeConfig();
 
-		console.log(chalk.blue.bold("\n=== Migration Process Completed ===\n"));
+		console.log(chalk.blue("\n=== Migration Process Completed ===\n"));
 	}
 
 	private loadConfig(): void {
@@ -72,7 +72,7 @@ export class Migration {
 			const migration = yaml.load(migrationContent) as MigrationFile;
 
 			if (migration.version > this.currentVersion) {
-				console.log(chalk.green.bold(`Applying migration file: ${file} (version ${migration.version})`));
+				console.log(chalk.green(`Applying migration file: ${file} (version ${migration.version})`));
 
 				this.processAddOperations(migration.add);
 				this.processRemoveOperations(migration.remove);
