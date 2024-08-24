@@ -1,6 +1,20 @@
 {
 	"name": "nmigrate",
-	"module": "src/manual.ts",
+	"version": "1.0.0",
+	"description": "A migration tool for YAML configurations",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"module": "dist/index.js",
+	"bin": {
+		"nmigrate": "./dist/cli.js"
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "bun build ./src/index.ts ./src/cli.ts --outdir=./dist --target=node",
+		"prepublishOnly": "bun run build"
+	},
 	"type": "module",
 	"devDependencies": {
 		"@types/bun": "latest",

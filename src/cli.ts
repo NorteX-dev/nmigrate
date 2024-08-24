@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /**
 1. Generate an empty migration file:
 bun run cli.ts generate [--directory=./custom-migrations-dir]
