@@ -5,13 +5,13 @@ database:
 logging:
   level: debug
   file: /var/log/myapp.log
-features:
-  dark_mode: false
-  notifications: true
 cache:
   enabled: true
   type: redis
   ttl: 3600
+features:
+  dark_mode: false
+  notifications: true
 
 # DO NOT CHANGE. This value is used for migrations. If you change this, you risk losing data.
 version: 3

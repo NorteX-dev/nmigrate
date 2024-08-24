@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
 1. Generate an empty migration file:
 bun run cli.ts generate [--directory=./custom-migrations-dir]
@@ -13,12 +11,14 @@ bun run cli.ts modify key.path new_value [--directory=./custom-migrations-dir]
 bun run cli.ts migrate ./config.yml [--directory=./custom-migrations-dir]
 */
 
+// todo : run through claude to also fix comments in cli
+
 import { Migration } from "./index";
 import * as fs from "fs";
 import * as path from "path";
-import * as yaml from "js-yaml";
 import { parseArgs } from "util";
 import slugify from "slugify";
+import yaml from "yaml";
 
 const { values, positionals } = parseArgs({
 	args: process.argv,
@@ -43,7 +43,7 @@ function getLatestVersion(migrationsDir: string): number {
 		.sort();
 	if (files.length === 0) return 0;
 	const latestFile = files[files.length - 1];
-	const content = yaml.load(fs.readFileSync(path.join(migrationsDir, latestFile), "utf8")) as any;
+	const content = yaml.parse(fs.readFileSync(path.join(migrationsDir, latestFile), "utf8")) as any;
 	return content.version || 0;
 }
 
@@ -70,7 +70,7 @@ function generateMigrationFile(migrationsDir: string, name: string, overrideVers
 		version: newVersion,
 	};
 
-	fs.writeFileSync(path.join(migrationsDir, filename), yaml.dump(content));
+	fs.writeFileSync(path.join(migrationsDir, filename), yaml.stringify(content));
 	console.log(`Generated migration file: ${filename} (version: ${newVersion})`);
 }
 
@@ -85,7 +85,7 @@ function addOperation(migrationsDir: string, operation: string, key: string, val
 	}
 	const latestFile = files[files.length - 1];
 	const filePath = path.join(migrationsDir, latestFile);
-	const content = yaml.load(fs.readFileSync(filePath, "utf8")) as any;
+	const content = yaml.parse(fs.readFileSync(filePath, "utf8")) as any;
 
 	if (!content[operation]) {
 		content[operation] = {};
@@ -101,7 +101,7 @@ function addOperation(migrationsDir: string, operation: string, key: string, val
 		}
 	}
 
-	fs.writeFileSync(filePath, yaml.dump(content));
+	fs.writeFileSync(filePath, yaml.stringify(content));
 	console.log(`Added ${operation} operation to ${latestFile}`);
 }
 

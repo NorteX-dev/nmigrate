@@ -1,6 +1,6 @@
 import chalk from "chalk";
 import fs from "fs";
-import * as yaml from "js-yaml";
+import yaml from "yaml";
 import path from "path";
 
 interface MigrationFile {
@@ -19,13 +19,13 @@ export class Migration {
 	private readonly configPath: string;
 	private readonly migrationsDir: string;
 
-	private config: Config;
+	private configDoc: yaml.Document;
 	private currentVersion: number;
 
 	constructor(configPath: string, migrationsDir: string) {
 		this.configPath = configPath;
 		this.migrationsDir = migrationsDir;
-		this.config = {};
+		this.configDoc = new yaml.Document();
 		this.currentVersion = 0;
 	}
 
@@ -43,11 +43,12 @@ export class Migration {
 	private loadConfig(): void {
 		if (fs.existsSync(this.configPath)) {
 			const configContent = fs.readFileSync(this.configPath, "utf8");
-			this.config = yaml.load(configContent) as Config;
+			this.configDoc = yaml.parseDocument(configContent);
 			console.log(chalk.cyan(`Loaded existing config from ${this.configPath}`));
 
-			if ("version" in this.config) {
-				this.currentVersion = this.config.version;
+			const versionNode = this.configDoc.get("version");
+			if (versionNode !== undefined) {
+				this.currentVersion = versionNode as number;
 			} else {
 				console.log(chalk.yellow.bold("WARNING: No version field found in config. Assuming version 0."));
 			}
@@ -69,7 +70,7 @@ export class Migration {
 		for (const file of files) {
 			const filePath = path.join(this.migrationsDir, file);
 			const migrationContent = fs.readFileSync(filePath, "utf8");
-			const migration = yaml.load(migrationContent) as MigrationFile;
+			const migration = yaml.parse(migrationContent) as MigrationFile;
 
 			if (migration.version > this.currentVersion) {
 				console.log(chalk.green(`Applying migration file: ${file} (version ${migration.version})`));
@@ -79,7 +80,7 @@ export class Migration {
 				this.processModifyOperations(migration.modify);
 
 				this.currentVersion = migration.version;
-				this.config.version = this.currentVersion;
+				this.configDoc.set("version", this.currentVersion);
 
 				console.log(chalk.green(`\tCompleted processing ${file}\n`));
 			} else {
@@ -92,7 +93,7 @@ export class Migration {
 		if (addOps) {
 			console.log(chalk.yellow("\tAdd operations:"));
 			for (const [key, value] of Object.entries(addOps)) {
-				this.setNestedProperty(this.config, key, value);
+				this.setNestedProperty(key, value);
 				console.log(chalk.yellow(`\t\t+ ${key}: ${JSON.stringify(value)}`));
 			}
 		}
@@ -102,8 +103,12 @@ export class Migration {
 		if (removeOps) {
 			console.log(chalk.red("\tRemove operations:"));
 			for (const key of Object.keys(removeOps)) {
-				this.deleteNestedProperty(this.config, key);
-				console.log(chalk.red(`\t\t- ${key}`));
+				const removed = this.deleteNestedProperty(key);
+				if (removed) {
+					console.log(chalk.red(`\t\t- ${key}`));
+				} else {
+					console.log(chalk.yellow(`\t\t! ${key} (not found)`));
+				}
 			}
 		}
 	}
@@ -112,15 +117,19 @@ export class Migration {
 		if (modifyOps) {
 			console.log(chalk.blue("\tModify operations:"));
 			for (const [key, value] of Object.entries(modifyOps)) {
-				this.setNestedProperty(this.config, key, value);
+				this.setNestedProperty(key, value);
 				console.log(chalk.blue(`\t\t* ${key}: ${JSON.stringify(value)}`));
 			}
 		}
 	}
 
 	private writeConfig(): void {
-		const { version, ...configWithoutVersion } = this.config;
-		let updatedConfigYaml = yaml.dump(configWithoutVersion, { lineWidth: -1 });
+		const versionNode = this.configDoc.get("version");
+		if (versionNode) {
+			this.configDoc.deleteIn(["version"]);
+		}
+
+		let updatedConfigYaml = this.configDoc.toString();
 
 		updatedConfigYaml += "\n# DO NOT CHANGE. This value is used for migrations. If you change this, you risk losing data.\n";
 		updatedConfigYaml += `version: ${this.currentVersion}\n`;
@@ -129,31 +138,48 @@ export class Migration {
 		console.log(chalk.cyan(`Updated config written to ${this.configPath} (version ${this.currentVersion})`));
 	}
 
-	private setNestedProperty(obj: any, path: string, value: any): void {
-		const keys = path.split(".");
-		let current = obj;
+	private setNestedProperty(path: string, value: any): void {
+		const parts = path.split(".");
+		let current: any = this.configDoc.contents;
 
-		for (let i = 0; i < keys.length - 1; i++) {
-			if (!(keys[i] in current)) {
-				current[keys[i]] = {};
+		for (let i = 0; i < parts.length - 1; i++) {
+			if (!(current instanceof yaml.YAMLMap)) {
+				current = new yaml.YAMLMap();
+				this.configDoc.setIn(parts.slice(0, i), current);
 			}
-			current = current[keys[i]];
+			if (!current.has(parts[i])) {
+				current.set(parts[i], new yaml.YAMLMap());
+			}
+			current = current.get(parts[i]);
 		}
 
-		current[keys[keys.length - 1]] = value;
+		const lastPart = parts[parts.length - 1];
+		if (current instanceof yaml.YAMLMap) {
+			current.set(lastPart, value);
+		} else {
+			this.configDoc.setIn(parts, value);
+		}
 	}
 
-	private deleteNestedProperty(obj: any, path: string): void {
-		const keys = path.split(".");
-		let current = obj;
+	private deleteNestedProperty(path: string): boolean {
+		const parts = path.split(".");
+		let current: any = this.configDoc.contents;
 
-		for (let i = 0; i < keys.length - 1; i++) {
-			if (!(keys[i] in current)) {
-				return;
+		for (let i = 0; i < parts.length - 1; i++) {
+			if (current instanceof yaml.YAMLMap && current.has(parts[i])) {
+				current = current.get(parts[i]);
+			} else {
+				// If any part of the path doesn't exist, we can't delete the property
+				return false;
 			}
-			current = current[keys[i]];
 		}
 
-		delete current[keys[keys.length - 1]];
+		const lastPart = parts[parts.length - 1];
+		if (current instanceof yaml.YAMLMap && current.has(lastPart)) {
+			current.delete(lastPart);
+			return true;
+		}
+
+		return false;
 	}
 }
