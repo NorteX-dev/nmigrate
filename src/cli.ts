@@ -21,7 +21,7 @@ import { parseArgs } from "util";
 import slugify from "slugify";
 
 const { values, positionals } = parseArgs({
-	args: Bun.argv,
+	args: process.argv,
 	options: {
 		directory: {
 			type: "string",

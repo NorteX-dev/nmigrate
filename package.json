@@ -1,6 +1,6 @@
 {
 	"name": "nmigrate",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "A migration tool for YAML configurations",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
