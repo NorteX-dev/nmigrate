@@ -12,4 +12,6 @@ cache:
   enabled: true
   type: redis
   ttl: 3600
+
+# DO NOT CHANGE. This value is used for migrations. If you change this, you risk losing data.
 version: 3

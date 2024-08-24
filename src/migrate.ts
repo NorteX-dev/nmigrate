@@ -119,7 +119,12 @@ export class Migration {
 	}
 
 	private writeConfig(): void {
-		const updatedConfigYaml = yaml.dump(this.config);
+		const { version, ...configWithoutVersion } = this.config;
+		let updatedConfigYaml = yaml.dump(configWithoutVersion, { lineWidth: -1 });
+
+		updatedConfigYaml += "\n# DO NOT CHANGE. This value is used for migrations. If you change this, you risk losing data.\n";
+		updatedConfigYaml += `version: ${this.currentVersion}\n`;
+
 		fs.writeFileSync(this.configPath, updatedConfigYaml, "utf8");
 		console.log(chalk.cyan(`Updated config written to ${this.configPath} (version ${this.currentVersion})`));
 	}
