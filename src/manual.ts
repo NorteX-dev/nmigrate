@@ -1,4 +1,4 @@
-import { Migration } from "./migrate.ts";
+import { Migration } from "./migrate";
 
 const configPath = "./config.yml";
 const migrationsDir = "./migrations";

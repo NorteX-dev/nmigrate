@@ -1,4 +1,4 @@
-/*
+/**
 1. Generate an empty migration file:
 bun run cli.ts generate [--directory=./custom-migrations-dir]
 2. Add an "add" operation to the latest migration file:

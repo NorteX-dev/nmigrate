@@ -1,1 +1,1 @@
-export * from "./migrate.ts";
+export * from "./migrate";
